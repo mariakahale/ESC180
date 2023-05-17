@@ -1,0 +1,125 @@
+'''Semantic Similarity: starter code
+
+Author: Michael Guerzhoy. Last modified: Nov. 18, 2022.
+'''
+
+import math
+
+def norm(vec):
+    '''Return the norm of a vector stored as a dictionary, as
+    described in the handout for Project 3.
+    '''
+
+    sum_of_squares = 0.0
+    for x in vec:
+        sum_of_squares += vec[x] * vec[x]
+
+    return math.sqrt(sum_of_squares)
+
+
+def cosine_similarity(vec1, vec2):
+  list1 = vec1.keys()
+  list2 = vec2.keys()
+  sum = 0
+  square1 = 0
+  square2 = 0
+  for i in list1:
+    if i in list2:
+      product = vec1[i]*vec2[i]
+      sum += product
+  for i in list1:
+    square1 += (vec1[i])**2
+  for i in list2:
+    square2 += (vec2[i])**2
+  return sum/(square1*square2)**(1/2)
+
+
+def build_semantic_descriptors(sentences):
+  d = {}
+
+  for i in range(len(sentences)):
+    for j in range(len(sentences[i])):
+      x = sentences[i][j]
+      list = []
+      for a in sentences:
+        if x in a:
+            list += a
+      word_counts = {}
+      for y in list:
+        word_counts[y] = list.count(y)
+        d[x] = word_counts
+  return d
+
+
+
+
+def build_semantic_descriptors_from_files(filenames):
+  filename = ''
+  for i in filenames:
+    f=open(i, "r", encoding="latin1")
+    filename += f.read()
+
+    l2 = []
+    l3 = []
+    semantic_descriptors = []
+    remove = [",", "-", "--", ":", ";"]
+    for j in remove:
+      filename = filename.replace(j,'')
+
+    l = filename.split('!')
+    for i in l:
+      i = str(i)
+      temp = i.split('.')
+      l2 += temp
+
+    for k in l2:
+      k = str(k)
+      temp = k.split('?')
+      l3 += temp
+
+    for n in l3:
+      n = str(n)
+      temp = n.split(' ')
+      semantic_descriptors.append(temp)
+
+  return build_semantic_descriptors(semantic_descriptors)
+
+
+def most_similar_word(word, choices, semantic_descriptors, similarity_fn):
+  wordvec = {}
+  choicesvec = {}
+  ans = 0
+  choose = ''
+  for i in choices:
+    wordvec[word] = semantic_descriptors[word]
+    choicesvec[i] = semantic_descriptors[i]
+    if similarity_fn(wordvec, choicesvec) > ans:
+      ans = similarity_fn(wordvec, choicesvec)
+      choose = i
+  if word not in semantic_descriptors:
+    return -1
+  return choose
+
+
+
+def run_similarity_test(filename, semantic_descriptors, similarity_fn):
+  f = open(filename, "r", encoding="latin1")
+  string = f.read()
+  f.close()
+  list1 = string.split("\n")
+  list2 = []
+  for a in range(len(list1)):
+    list2[a] = list1[a].split(" ")
+  correct = 0
+  for i in range(len(list2)):
+    if most_similar_word(list2[i][0], list2[i][1:],  semantic_descriptors, similarity_fn) == semantic_descriptors[i]:
+      correct += 1
+  return (correct / len(filename) * 100)
+
+
+
+
+
+if __name__ == "__main__":
+  semantic_descriptors=build_semantic_descriptors_from_files(['wp.txt','sw.txt'])
+  print(run_similarity_test("test.txt",semantic_descriptors,cosine_similarity))
